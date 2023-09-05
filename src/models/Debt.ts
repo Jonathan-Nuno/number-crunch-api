@@ -3,7 +3,7 @@ export class Debt {
     public balance: number,
     public interestRate: number,
     public minimumPayment: number,
-    public flatMinimumPayment: string,
+    public flatMinimumPayment: boolean,
     public extraPayment: number = 0
   ) {}
 }

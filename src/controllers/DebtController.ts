@@ -39,7 +39,7 @@ export class DebtController {
   }
 
   private static calculateMinimumPayment(debt: Debt): number {
-    if (debt.flatMinimumPayment === "Yes") {
+    if (debt.flatMinimumPayment === true) {
       return debt.minimumPayment;
     }
 
