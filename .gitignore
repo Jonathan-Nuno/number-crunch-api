@@ -53,8 +53,12 @@ typings/
 # Optional REPL history
 .node_repl_history
 
-# dotenv environment variables file
-.env
+# dotenv environment variables files and private keys
+.env*
+!.env.example
+*.pem
+*.key
+*.p12
 
 # Next.js build output
 .next/

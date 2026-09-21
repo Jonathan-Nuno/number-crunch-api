@@ -15,6 +15,8 @@ interface PaymentInformation {
 }
 
 export class DebtController {
+  private static readonly MAX_PAYMENT_MONTHS = 1_200;
+
   public static calculatePayment(debt: Debt) {
     const paymentSchedule = this.generatePaymentSchedule(debt);
 
@@ -24,7 +26,7 @@ export class DebtController {
         0
       ),
       totalPaidPrincipal: paymentSchedule.reduce(
-        (sum, item) => sum + item.principalPaid + item.extraPayment,
+        (sum, item) => sum + item.principalPaid,
         0
       ),
       totalPaymentsMade: paymentSchedule.length,
@@ -48,20 +50,41 @@ export class DebtController {
 
   private static generatePaymentSchedule(debt: Debt) {
     const paymentSchedule: PaymentScheduleItem[] = [];
+    let balance = debt.balance;
 
-    while (debt.balance > 0) {
-      const interestPaid = debt.balance * ((debt.interestRate * 0.01) / 12);
-      const minimumPayment = this.calculateMinimumPayment(debt);
-      const principalPaid = minimumPayment + debt.extraPayment - interestPaid;
-      debt.balance -= principalPaid + debt.extraPayment;
+    while (balance > 0 && paymentSchedule.length < this.MAX_PAYMENT_MONTHS) {
+      const interestPaid = balance * (debt.interestRate / 1_200);
+      const minimumPayment = this.calculateMinimumPayment({ ...debt, balance });
+      const totalPayment = Math.min(
+        minimumPayment + debt.extraPayment,
+        balance + interestPaid
+      );
+      const principalPaid = totalPayment - interestPaid;
+
+      if (!Number.isFinite(principalPaid) || principalPaid <= 0) {
+        throw new RangeError(
+          "The payment must be greater than the monthly interest charge"
+        );
+      }
+
+      const extraPayment = Math.min(
+        debt.extraPayment,
+        Math.max(0, totalPayment - Math.min(minimumPayment, totalPayment))
+      );
+      balance = Math.max(balance - principalPaid, 0);
 
       paymentSchedule.push({
         principalPaid,
         interestPaid,
-        extraPayment: debt.extraPayment,
-        balance: Math.max(debt.balance, 0),
+        extraPayment,
+        balance,
       });
     }
+
+    if (balance > 0) {
+      throw new RangeError("The repayment period exceeds 100 years");
+    }
+
     return paymentSchedule;
   }
 }
